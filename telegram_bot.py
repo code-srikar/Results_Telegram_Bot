@@ -4,10 +4,13 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import seleniumbase as sb
 from bs4 import BeautifulSoup
 from fpdf import FPDF
-# import datetime
+import os
+from dotenv import load_dotenv
 
-TOKEN: Final = '8012517366:AAFqEOAH8J8aDTw9bJC8PepZ5-OZhXEhZtM'
-BOT_USERNAME: Final = '@cvr_results_bot'
+load_dotenv()
+
+TOKEN:Final = os.getenv("TOKEN")
+BOT_USERNAME = os.getenv("BOT_USERNAME")
 
 SECTION_HTNOS = {
     "C": ["22b81a05c9","22b81a05d0","22b81a05d1","22b81a05d2","22b81a05d3","22b81a05d4","22b81a05d5","22b81a05d6","22b81a05d7","22b81a05d8","22b81a05d9","22b81a05e0","22b81a05e2","22b81a05e3","22b81a05e4","22b81a05e5","22b81a05e6","22b81a05e7","22b81a05e8","22b81a05e9","22b81a05f0","22b81a05f1","22b81a05f2","22b81a05f3","22b81a05f4","22b81a05f5","22b81a05f6","22b81a05f7","22b81a05f8","22b81a05f9","22b81a05g0","22b81a05g1","22b81a05g2","22b81a05g3","22b81a05g4","22b81a05g5","22b81a05g6","22b81a05g7","22b81a05g8","22b81a05g9","22b81a05h0","22b81a05h1","22b81a05h2","22b81a05h3","22b81a05h4","22b81a05h5","22b81a05h6","22b81a05h7","22b81a05h8","22b81a05h9","22b81a05j0","22b81a05j1","22b81a05j2","22b81a05j3","22b81a05j4","22b81a05j5","22b81a05j6","22b81a05j7","22b81a05j8","22b81a05j9","22b81a05k0","22b81a05k1","22b81a05k2"],
