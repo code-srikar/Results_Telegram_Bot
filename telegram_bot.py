@@ -15,23 +15,22 @@ BOT_USERNAME = os.getenv("BOT_USERNAME")
 SECTION_HTNOS = {
     "C": ["22b81a05c9","22b81a05d0","22b81a05d1","22b81a05d2","22b81a05d3","22b81a05d4","22b81a05d5","22b81a05d6","22b81a05d7","22b81a05d8","22b81a05d9","22b81a05e0","22b81a05e2","22b81a05e3","22b81a05e4","22b81a05e5","22b81a05e6","22b81a05e7","22b81a05e8","22b81a05e9","22b81a05f0","22b81a05f1","22b81a05f2","22b81a05f3","22b81a05f4","22b81a05f5","22b81a05f6","22b81a05f7","22b81a05f8","22b81a05f9","22b81a05g0","22b81a05g1","22b81a05g2","22b81a05g3","22b81a05g4","22b81a05g5","22b81a05g6","22b81a05g7","22b81a05g8","22b81a05g9","22b81a05h0","22b81a05h1","22b81a05h2","22b81a05h3","22b81a05h4","22b81a05h5","22b81a05h6","22b81a05h7","22b81a05h8","22b81a05h9","22b81a05j0","22b81a05j1","22b81a05j2","22b81a05j3","22b81a05j4","22b81a05j5","22b81a05j6","22b81a05j7","22b81a05j8","22b81a05j9","22b81a05k0","22b81a05k1","22b81a05k2"],
     "D": ["22b81a05k3","22b81a05k4","22b81a05k5","22b81a05k6","22b81a05k7","22b81a05k8","22b81a05k9","22b81a05l0","22b81a05l1","22b81a05l2","22b81a05l3","22b81a05l4","22b81a05l5","22b81a05l6","22b81a05l7","22b81a05l8","22b81a05l9","22b81a05m0","22b81a05m1","22b81a05m2","22b81a05m3","22b81a05m4","22b81a05m5","22b81a05m6","22b81a05m7","22b81a05m8","22b81a05m9","22b81a05n0","22b81a05n1","22b81a05n2","22b81a05n3","22b81a05n4","22b81a05n5","22b81a05n6","22b81a05n7","22b81a05n8","22b81a05n9","22b81a05p0","22b81a05p1","22b81a05p2","22b81a05p3","22b81a05p4","22b81a05p5","22b81a05p6","22b81a05p7","22b81a05p8","22b81a05p9","22b81a05q0","22b81a05q1","22b81a05q2","22b81a05q3","22b81a05q4","22b81a05q6","22b81a05q7","22b81a05q8","22b81a05q9","22b81a05r0","22b81a05r1","22b81a05r2","22b81a05r3","22b81a05r4","22b81a05r5","22b81a05r6"],
-    # Add more sections and HTNOs
 }
 
-# ----- Start Command -----
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("Individual Result", callback_data='individual')],
-        [InlineKeyboardButton("Section-wise Result", callback_data='section')]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Choose result type:", reply_markup=reply_markup)
 
-# ----- Help Command -----
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # keyboard = [
+    #     [InlineKeyboardButton("Individual Result", callback_data='individual')],
+    #     [InlineKeyboardButton("Section-wise Result", callback_data='section')]
+    # ]
+    # reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("👋 Welcome to CVR Results! Use /help to get started.")
+
+
 async def help_command(update:Update,context:ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Available Commands:\n/result <rollno> - Get individual result\n/section <section_name> - Get sorted results by CGPA\n/top10 - Top 10 in the section\n/subscribe - Get result alerts")
 
-# ----- Help Command -----
+
 async def top10_command(update:Update,context:ContextTypes.DEFAULT_TYPE):
     args = context.args
     if len(args) != 4:
@@ -45,10 +44,11 @@ async def top10_command(update:Update,context:ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Invalid section name.")
         return
 
+    await update.message.reply_text(f"Fetching Top 10 results for section {section}...⏳")
     results = extract_top10_results(htnos, year, sem, exam)
     await context.bot.send_document(chat_id=update.effective_chat.id, document=open(results, 'rb'), caption=f"Top 10 Students of Section {section} (PDF)")
 
-# ----- Help Command -----
+
 async def result_command(update:Update,context:ContextTypes.DEFAULT_TYPE):
     args = context.args
     if len(args) != 4:
@@ -58,11 +58,13 @@ async def result_command(update:Update,context:ContextTypes.DEFAULT_TYPE):
     htno, year, sem, exam = args
     await update.message.reply_text(f"Fetching result for {htno} ({year}-{sem}, {exam})...⏳")
 
-    # Scrape and send result
     result_text = handle_individual_response(htno, year, sem, exam)
-    await update.message.reply_text(result_text)
+    if "not found" in result_text:
+        await update.message.reply_text(result_text)
+    else:
+        await update.message.reply_text("\n".join(result_text))
 
-# ----- Help Command -----
+
 async def section_command(update:Update,context:ContextTypes.DEFAULT_TYPE):
     args = context.args
     if len(args) != 4:
@@ -81,74 +83,74 @@ async def section_command(update:Update,context:ContextTypes.DEFAULT_TYPE):
     result_path = handle_bulk_response(htnos, year, sem, exam)
     await context.bot.send_document(chat_id=update.effective_chat.id, document=open(result_path, 'rb'), caption="Sorted Section Results (PDF)")
 
-# ----- Callback Button Handler -----
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    data = query.data
 
-    if 'type' not in context.user_data:
-        context.user_data['type'] = data
-        keyboard = [
-            [InlineKeyboardButton("I", callback_data='I')],
-            [InlineKeyboardButton("II", callback_data='II')],
-            [InlineKeyboardButton("III", callback_data='III')],
-            [InlineKeyboardButton("IV", callback_data='IV')],
-        ]
-        await query.edit_message_text("Select Year:", reply_markup=InlineKeyboardMarkup(keyboard))
-        return
+# async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#     query = update.callback_query
+#     await query.answer()
+#     data = query.data
 
-    if 'year' not in context.user_data:
-        context.user_data['year'] = data
-        sem_keyboard = [
-            [InlineKeyboardButton("I", callback_data='I')],
-            [InlineKeyboardButton("II", callback_data='II')]
-        ]
-        await query.edit_message_text("Select Semester:", reply_markup=InlineKeyboardMarkup(sem_keyboard))
-        return
+#     if 'type' not in context.user_data:
+#         context.user_data['type'] = data
+#         keyboard = [
+#             [InlineKeyboardButton("I", callback_data='I')],
+#             [InlineKeyboardButton("II", callback_data='II')],
+#             [InlineKeyboardButton("III", callback_data='III')],
+#             [InlineKeyboardButton("IV", callback_data='IV')],
+#         ]
+#         await query.edit_message_text("Select Year:", reply_markup=InlineKeyboardMarkup(keyboard))
+#         return
 
-    if 'sem' not in context.user_data:
-        context.user_data['sem'] = data
-        exam_keyboard = [
-            [InlineKeyboardButton("R", callback_data='R')],
-            [InlineKeyboardButton("S", callback_data='S')],
-            [InlineKeyboardButton("M", callback_data='M')],
-        ]
-        await query.edit_message_text("Select Exam Type:", reply_markup=InlineKeyboardMarkup(exam_keyboard))
-        return
+#     if 'year' not in context.user_data:
+#         context.user_data['year'] = data
+#         sem_keyboard = [
+#             [InlineKeyboardButton("I", callback_data='I')],
+#             [InlineKeyboardButton("II", callback_data='II')]
+#         ]
+#         await query.edit_message_text("Select Semester:", reply_markup=InlineKeyboardMarkup(sem_keyboard))
+#         return
 
-    if 'exam' not in context.user_data:
-        context.user_data['exam'] = data
+#     if 'sem' not in context.user_data:
+#         context.user_data['sem'] = data
+#         exam_keyboard = [
+#             [InlineKeyboardButton("R", callback_data='R')],
+#             [InlineKeyboardButton("S", callback_data='S')],
+#             [InlineKeyboardButton("M", callback_data='M')],
+#         ]
+#         await query.edit_message_text("Select Exam Type:", reply_markup=InlineKeyboardMarkup(exam_keyboard))
+#         return
 
-        if context.user_data['type'] == 'individual':
-            await query.edit_message_text("Please enter your Hall Ticket Number (HTNO):")
-            return
+#     if 'exam' not in context.user_data:
+#         context.user_data['exam'] = data
 
-        # SECTION-WISE: Show section buttons
-        keyboard = [[InlineKeyboardButton(section, callback_data=f"sec_{section}")]
-                    for section in SECTION_HTNOS.keys()]
-        await query.edit_message_text("Select your section:", reply_markup=InlineKeyboardMarkup(keyboard))
-        return
-    elif data.startswith("sec_"):
-        section = data.split("_")[1]
-        context.user_data['section'] = section
-        await query.edit_message_text(f"Fetching results for Section {section}... please wait ⏳")
+#         if context.user_data['type'] == 'individual':
+#             await query.edit_message_text("Please enter your Hall Ticket Number (HTNO):")
+#             return
 
-        year = context.user_data['year']
-        sem = context.user_data['sem']
-        exam = context.user_data['exam']
-        htnos = SECTION_HTNOS.get(section, [])
+#         # SECTION-WISE: Show section buttons
+#         keyboard = [[InlineKeyboardButton(section, callback_data=f"sec_{section}")]
+#                     for section in SECTION_HTNOS.keys()]
+#         await query.edit_message_text("Select your section:", reply_markup=InlineKeyboardMarkup(keyboard))
+#         return
+#     elif data.startswith("sec_"):
+#         section = data.split("_")[1]
+#         context.user_data['section'] = section
+#         await query.edit_message_text(f"Fetching results for Section {section}... please wait ⏳")
 
-        async def fetch_bulk_and_send():
-            results = handle_bulk_response(htnos, year, sem, exam)
-            # print(results)
-            # CHUNK_SIZE = 4000
-            # message = "\n\n".join(results)
-            # for i in range(0, len(message), CHUNK_SIZE):
-            await context.bot.send_document(chat_id=query.message.chat.id, document=open(results, 'rb'),caption="Here is your PDF of Sorted Results!")
+#         year = context.user_data['year']
+#         sem = context.user_data['sem']
+#         exam = context.user_data['exam']
+#         htnos = SECTION_HTNOS.get(section, [])
 
-        context.application.create_task(fetch_bulk_and_send())
-    context.user_data.clear()
+#         async def fetch_bulk_and_send():
+#             results = handle_bulk_response(htnos, year, sem, exam)
+#             # print(results)
+#             # CHUNK_SIZE = 4000
+#             # message = "\n\n".join(results)
+#             # for i in range(0, len(message), CHUNK_SIZE):
+#             await context.bot.send_document(chat_id=query.message.chat.id, document=open(results, 'rb'),caption="Here is your PDF of Sorted Results!")
+
+#         context.application.create_task(fetch_bulk_and_send())
+#     context.user_data.clear()
 
 # ----- Result Scraper -----
 def handle_individual_response(htno: str,y:str,sm:str,ex:str) -> str:
@@ -242,7 +244,7 @@ def handle_bulk_response(htnos:list, year:str, sem:str, exam:str)->str:
             except Exception as e:
                 results.append((0.0, f"{htno} ❌ Error", [str(e)]))
 
-    # Sort by CGPA
+
     sorted_results = sorted(results, key=lambda x: x[0], reverse=True)
 
     messages = []
@@ -318,7 +320,7 @@ def extract_top10_results(htnos:list,year:str,sem:str,exam:str)->str:
             except Exception as e:
                 results.append((0.0, f"{htno} ❌ Error", [str(e)]))
 
-    # Sort by CGPA
+
     sorted_results = sorted(results, key=lambda x: x[0], reverse=True)
     
     messages = []
@@ -336,16 +338,14 @@ def extract_top10_results(htnos:list,year:str,sem:str,exam:str)->str:
             lines = message.split("\n")
             for line in lines:
                 pdf.cell(200, 10, txt=line, ln=True)
-            pdf.ln(5)  # Add space between blocks
+            pdf.ln(5)
 
-        # Save the PDF file
         pdf.output(filename)
         return filename
     pdf_path = generate_pdf(messages)
     return pdf_path
 
 
-# ----- Handle HTNO Input After Button Flow -----
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
     text: str = update.message.text
@@ -367,18 +367,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Please use /start and follow the button prompts to get results.")
 
-# ----- Error Handler -----
+
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"Update {update} caused error {context.error}")
 
-# ----- Main -----
+
 if __name__ == "__main__":
     print("Starting bot...")
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CallbackQueryHandler(button_handler))
+    # app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(CommandHandler("result", result_command))
     app.add_handler(CommandHandler("section", section_command))
     app.add_handler(CommandHandler("top10", top10_command))
